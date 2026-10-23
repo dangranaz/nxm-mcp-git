@@ -15,6 +15,10 @@
 
 `#Rust` · `#MCP` · `#AIagents` · `#Git` · `#SoftwareGovernance` · `#SecureByDesign` · `#LocalFirst` · `#DeveloperTools`
 
+<br>
+
+![nxm-git architecture: one core, two consumers, one policy](docs/nxm-git-architecture.png)
+
 </div>
 
 Stop letting an agent shell out to `git` and parse text it half-understands.
