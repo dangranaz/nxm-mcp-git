@@ -1,0 +1,50 @@
+[workspace]
+resolver = "2"
+members = [
+    "nxm_git",
+    "nxm_git_mcp",
+]
+
+[workspace.package]
+version = "0.2.0"
+edition = "2021"
+rust-version = "1.95.0"
+license = "LicenseRef-Proprietary"
+publish = false
+repository = "https://github.com/draco690456/nxm-git"
+
+[workspace.dependencies]
+# Internal crates
+nxm-git = { path = "nxm_git" }
+
+# Error handling
+thiserror = "2"
+anyhow = "1"
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Async runtime (MCP server)
+tokio = { version = "1", features = ["rt", "macros", "time"] }
+async-trait = "0.1"
+
+# MCP SDK (official Rust, spec 2026-07-28) — same line as nxm-memory
+rmcp = { version = "0.14", features = ["server", "transport-io", "transport-streamable-http-server", "macros"] }
+
+# HTTP server for the MCP Streamable HTTP transport (same axum 0.8 line rmcp uses)
+axum = "0.8"
+
+# CLI
+clap = { version = "4", features = ["derive"] }
+
+# TOML for config
+toml = { version = "0.8" }
+
+[profile.release]
+opt-level = 3
+lto = "thin"

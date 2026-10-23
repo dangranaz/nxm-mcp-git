@@ -1,0 +1,32 @@
+[package]
+name = "nxm-git-mcp"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Thin MCP server exposing nxm-git over Streamable HTTP"
+
+[[bin]]
+name = "nxm_git_mcp"
+path = "src/main.rs"
+
+[dependencies]
+nxm-git.workspace = true
+rmcp.workspace = true
+tokio = { workspace = true, features = ["rt-multi-thread", "net", "signal"] }
+axum.workspace = true
+clap.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+anyhow.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+schemars = "^1.2.2"
+
+[dev-dependencies]
+# HTTP client for Streamable HTTP integration test
+hyper = { version = "1", features = ["client", "http1"] }
+hyper-util = { version = "0.1", features = ["tokio"] }
+http-body-util = "0.1"
+tempfile = "3"

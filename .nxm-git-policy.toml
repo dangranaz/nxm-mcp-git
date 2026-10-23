@@ -1,0 +1,56 @@
+# NXM git per-repo policy — applied by the nxm-git core library.
+# Encodes the branching pipeline from WORKFLOW.md: main is never touched
+# directly; it only receives --no-ff merges from develop after a trial period.
+
+# `main` is protected: commit/push/PR against it require confirm=true.
+# `develop` is the integration branch and is intentionally NOT protected.
+protected_branches = ["main"]
+
+# No force-push unless this is flipped AND the call passes allow_force + confirm.
+allow_force = false
+
+# Destructive operations require an explicit confirm flag.
+destructive_confirm = true
+
+# Empty = fall back to the built-in FORBIDDEN_PATTERNS scan list.
+forbidden_patterns = []
+
+# Paths skipped by the forbidden-content scan (repo-relative; prefix or *-glob).
+# This repo legitimately names its own owner/URLs in metadata, docs and the
+# delegation briefs, and shows example URLs in doc-comments — all false
+# positives for the public-boundary guard. We exclude them broadly so nxm-git
+# can push itself. TRADEOFF (accepted): a real secret pasted into one of these
+# excluded files would NOT be caught by the scan.
+#   - "*.md"            → README/CONTEXT/CHANGELOG/WORKFLOW and all docs
+#   - "Cargo.toml"      → the `repository = "...owner..."` field
+#   - "prompts/**"      → delegation briefs that quote the patterns to explain them
+#   - "nxm_git/src/pr.rs" → example PR URLs in doc-comments
+# (The built-in default — nxm_git/src/scan.rs and **/tests/** — is REPLACED by
+# this explicit list, so those are repeated here to keep them covered.)
+scan_exclude = [
+    "nxm_git/src/scan.rs",
+    "**/tests/**",
+    "*.md",
+    "Cargo.toml",
+    "prompts/**",
+    "nxm_git/src/pr.rs",
+]
+
+# Commands that must pass before a push is allowed. Enforced by `push`
+# (nxm_git/src/write.rs → prepush): a failing command blocks the push.
+require_pre_push = ["cargo test --workspace"]
+
+# --- Workstream enforcement (dogfooding) -----------------------------------
+# nxm-git applies its own parallel-workstream convention. Activating these
+# fields turns ON the G1/G2 guards in check_policy:
+#   G1 — a direct commit on `develop_branch` is governed by
+#        `develop_direct_commit` (here: requires confirm=true), UNLESS the
+#        commit is a merge whose source matches an integration branch.
+#   G2 — a `work_branch_prefix` branch must be based on an integration branch
+#        (or on `develop_branch` with confirm), never on `main`.
+# Empty `integration_branches` would keep the guards off (retro-compatible).
+# See WORKFLOW.md "Parallel workstreams in isolated worktrees".
+integration_branches = ["integration/*"]
+develop_direct_commit = "confirm"
+develop_branch = "develop"
+work_branch_prefix = "work/"

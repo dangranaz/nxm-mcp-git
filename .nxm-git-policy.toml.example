@@ -1,0 +1,54 @@
+# NXM git per-repo policy — template.
+# Copy to `.nxm-git-policy.toml` at a repository root. Applied by the nxm-git
+# core library (agent via MCP + future TUI inherit the same guards).
+# See WORKFLOW.md for the branching pipeline this encodes.
+
+# `main` is never touched directly: commit/push/PR against it require confirm=true.
+# (develop is intentionally NOT protected — it is the integration branch.)
+protected_branches = ["main"]
+
+# No force-push unless this is flipped AND the call passes allow_force + confirm.
+allow_force = false
+
+# Destructive operations require an explicit confirm flag.
+destructive_confirm = true
+
+# Content that must never be pushed. Empty here = fall back to the built-in
+# FORBIDDEN_PATTERNS scan list. Add repo-specific secrets/markers as needed.
+forbidden_patterns = []
+
+# Repo-relative paths skipped by the forbidden-content scan, so a repo does not
+# block its own push on legitimate content. Each entry is a path prefix
+# (e.g. "nxm_git/src/scan.rs", "docs") or a `*`-glob (e.g. "**/tests/**",
+# "*.lock"). Empty = scan every file (strictest). Keep it NARROW: never exclude
+# whole metadata globs like "*.md" or "Cargo.toml", which could hide a real
+# leak. Omit the key entirely to use the built-in default (the pattern-defining
+# source file and all test trees).
+# scan_exclude = ["nxm_git/src/scan.rs", "**/tests/**"]
+
+# Commands that must succeed before a push is allowed (e.g. tests). Empty = none.
+require_pre_push = []
+
+# Workstream enforcement (parallel branches). These fields activate the G1/G2
+# guards in `nxm_git::policy::check_policy`: a direct commit on `develop_branch`
+# is governed by `develop_direct_commit`, and a `work_branch_prefix` branch must
+# be based on an integration branch (or `develop_branch` with confirm). With
+# `integration_branches` empty the guards are off (retro-compatible).
+# See WORKFLOW.md "Parallel workstreams in isolated worktrees".
+
+# Landing-zone branches for parallel workstreams (e.g. "integration/*").
+# Empty = the workstream convention is off; no new guard is active.
+# Default: empty (no integration branches declared).
+# integration_branches = ["integration/*"]
+
+# Whether a direct commit on `develop_branch` is denied outright or requires
+# `confirm`. A commit based on an integration branch is always allowed.
+# Values: "deny" | "confirm". Default: "confirm".
+# develop_direct_commit = "confirm"
+
+# Name of the integration/confluence branch. Read from the policy, never
+# hard-coded. Default: "develop".
+# develop_branch = "develop"
+
+# Prefix of workstream branches. Default: "work/".
+# work_branch_prefix = "work/"
