@@ -9,9 +9,9 @@ members = [
 version = "0.2.0"
 edition = "2021"
 rust-version = "1.95.0"
-license = "LicenseRef-Proprietary"
+license = "MIT OR Apache-2.0"
 publish = false
-repository = "https://github.com/draco690456/nxm-git"
+repository = "https://github.com/dangranaz/nxm-mcp-git"
 
 [workspace.dependencies]
 # Internal crates

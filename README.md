@@ -1,15 +1,71 @@
-# nxm-git
+<div align="center">
 
-Typed, structured Git for agents — and the Git backend of the future NXM TUI.
+# Nxm-git
 
-`nxm-git` gives an agent the Git operations it actually needs as **typed MCP
-tools** returning structured JSON, instead of shelling out to `git` and parsing
-text. The same core library can be called in-process by the TUI, so both
-consumers get identical behaviour and identical safety guards.
+<!-- Licensed MIT OR Apache-2.0 — same as the rest of the nxm tooling. -->
+[![CI](https://github.com/dangranaz/nxm-mcp-git/actions/workflows/ci.yml/badge.svg)](https://github.com/dangranaz/nxm-mcp-git/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](#license)
+[![Rust](https://img.shields.io/badge/Rust-1.95%2B-000000?logo=rust&logoColor=white)](https://www.rust-lang.org)
+[![MCP](https://img.shields.io/badge/MCP-Streamable%20HTTP-5A4FCF)](#running-the-server)
+[![Tools](https://img.shields.io/badge/tools-14%20typed-informational)](#the-14-tools)
+[![Tests](https://img.shields.io/badge/tests-94%20passing-success)](#verifying-the-install)
+[![Version](https://img.shields.io/badge/version-0.2.0-blue)](CHANGELOG.md)
 
-- **Repo:** `draco690456/nxm-git` (private)
-- **License:** proprietary
-- **Version:** 0.2.0
+**Typed, policy-gated Git for AI agents — structured JSON in, guard-railed writes out.**
+
+`#Rust` · `#MCP` · `#AIagents` · `#Git` · `#SoftwareGovernance` · `#SecureByDesign` · `#LocalFirst` · `#DeveloperTools`
+
+</div>
+
+Stop letting an agent shell out to `git` and parse text it half-understands.
+`nxm-git` gives an agent the Git operations it actually needs as **14 typed MCP
+tools** that return structured JSON, with the dangerous edges — force-push,
+protected branches, leaking private content — closed by a policy the agent
+doesn't get to vote on.
+
+- **Repo:** `dangranaz/nxm-mcp-git`
+- **Transport:** MCP Streamable HTTP on `127.0.0.1:7281` (route `/mcp`), or stdio
+- **Also:** the Git backend of the future NXM TUI — one core library, two consumers
+
+---
+
+## Scope — why I built it
+
+AI coding agents are fast. Left alone with a shell, they are also **confidently
+destructive**: they force-push over a colleague's work, commit straight to
+`main`, or push a branch that still carries a private token or an internal-only
+marker — all while the command "looked right."
+
+The usual fix is a wall of shell wrappers and pre-commit hooks, bolted on per
+machine, invisible to the agent and impossible to reason about. I wanted the
+opposite: the safety to live **inside the Git layer itself**, expressed as data,
+inherited identically by every caller.
+
+So `nxm-git` is built on three convictions:
+
+1. **Structured beats scraped.** An agent should receive `git_diff` as
+   per-file additions/deletions, not a wall of unified-diff text it has to
+   re-parse and occasionally misread. Typed JSON in, typed JSON out.
+2. **Guards are friction, not a cage.** The policy stops the *distracted
+   mistake* — a force-push nobody meant, a commit on a protected branch, a push
+   carrying forbidden content. A *deliberate* operation still passes, with an
+   explicit flag. The human (or the agent, after asking) opts in on purpose.
+3. **One core, many consumers.** The same safety that protects an agent over
+   MCP must protect the TUI calling the library in-process. Guards that live in
+   the core can't be forgotten by a new caller.
+
+This is the tool incarnation of a governance layer: the rules an agent obeys are
+written down once, in code, and apply to human and machine alike.
+
+## What you get — the value in one screen
+
+| If you want to… | nxm-git gives you… |
+|---|---|
+| Give an agent Git without a raw shell | 14 typed tools returning JSON, not text to parse |
+| Stop accidental force-push / commits to `main` | A per-repo policy that refuses them unless explicitly confirmed |
+| Never leak private content to a public mirror | `git_scan_forbidden` — a pre-push gate that blocks forbidden patterns |
+| Run parallel agents without trashing each other's work | Integration branches + isolated worktrees, created mechanically |
+| Share one safe Git backend between an agent and a UI | One Rust core library; MCP server and TUI both call it |
 
 ## The dual model
 
@@ -110,13 +166,12 @@ a branch.
 
 The guards are **friction, not a cage**. They prevent the distracted mistake, not
 the deliberate act: an intentional operation passes with an explicit flag. This
-complements — and does not replace — the `git-guardrails-claude-code` hook that
-blocks dangerous shell Git on Claude Code.
+complements — and does not replace — a shell-level hook that blocks dangerous
+Git commands before they ever run.
 
 ## Installation
 
-nxm-git is a **private** product — there is no public release to download. The
-installer builds from this checkout and wires everything up:
+The installer builds from this checkout and wires everything up:
 
 ```bash
 ./install.sh
@@ -140,8 +195,7 @@ Overrides:
 | `NXM_GIT_ALLOWED_ROOT` | `$HOME/Projects/private` | `allowed_roots` entry when seeding the config. |
 
 Registering clients requires [`jq`](https://jqlang.github.io/jq/); without it the
-installer tells you to add the entry by hand. **freebuff / Manicode** does not
-consume external MCP servers, so it is intentionally skipped.
+installer tells you to add the entry by hand.
 
 After installing, start the server (next section) and verify with
 [Verifying the install](#verifying-the-install).
@@ -236,19 +290,91 @@ nxm-mcp status | grep nxm-git
 ./scripts/git-down.sh
 ```
 
+## The workflow it guards
+
+nxm-git exists to make one branching pipeline **mechanical** instead of
+hand-driven: `main` only ever receives `--no-ff` merges from `develop`; features
+and workstreams land through integration branches in isolated worktrees; the
+dangerous edges are refused unless explicitly confirmed. The full convention —
+and exactly how each policy field enforces it — lives in
+[`WORKFLOW.md`](WORKFLOW.md).
+
+## Roadmap
+
+Where nxm-git is headed. Order is indicative, not a promise — issues and PRs can
+reshuffle it.
+
+| Stage | Item | Status |
+|---|---|---|
+| **0.2.x** | 14 typed tools, per-repo policy, forbidden-content scan, workstream worktrees | ✅ shipped |
+| **0.3** | `git_merge` / `git_rebase` as policy-gated tools (today merges are still manual shell) | 🔜 planned |
+| **0.3** | Richer `git_log` filters (by author, path, grep) and paginated history | 🔜 planned |
+| **0.4** | NXM TUI consuming the core in-process — the second consumer, with UI confirmation dialogs | 🧭 designed |
+| **0.4** | Structured conflict reporting for `git_merge` (typed hunks, not raw markers) | 🧭 designed |
+| **0.5** | Policy presets (`strict` / `team` / `solo`) shippable as a single key | 💡 idea |
+| **0.5** | Per-crate release tags for multi-crate workspaces (see `WORKFLOW.md` open point) | 💡 idea |
+| **future** | Pluggable forbidden-pattern packs; audit log of every gated decision | 💡 idea |
+
+Have an idea or a need that isn't here? Open an issue — the roadmap is meant to
+move. See [Contributing](#contributing).
+
 ## Non-goals
 
 - Not a full Git port — only the operations agents and the TUI actually perform.
 - No auto-merge, no silent force-push.
-- Does not replace the shell-blocking hook; it complements it.
-- No guarantee of security. The value is ergonomics and portability.
+- Does not replace a shell-blocking hook; it complements it.
+- No guarantee of security. The value is ergonomics, portability and guard-rails.
 
 ## Layout
 
 ```
 nxm_git/       core library: status, diff, log, branches, show, blame,
-               scan, policy, write, pr, config, resolve
+               scan, policy, write, pr, config, resolve, worktree
 nxm_git_mcp/   MCP server: tool router (14 tools), HTTP transport, binary
 scripts/       git-up.sh / git-down.sh
 install.sh     build-from-source installer (binary + config + client registration)
+WORKFLOW.md    the branching pipeline nxm-git mechanically guards
+CHANGELOG.md   per-release history (Conventional Commits)
 ```
+
+## Contributing
+
+Contributions are welcome — nxm-git is small on purpose, and that makes it easy
+to improve.
+
+- **Fork it and make it better.** Found a rough edge, a missing Git operation, a
+  bug? Fork the repo, do the change, and open a pull request. Small, focused PRs
+  (one logical change each) are the easiest to review and merge.
+- **Open an issue first for anything larger** — a new tool, a policy field, a
+  behaviour change — so we can agree on the shape before you write the code.
+- **Respect the guard-rails.** The project dogfoods its own policy: one logical
+  change per commit, Conventional Commits, and the forbidden-content scan must
+  pass. See [`WORKFLOW.md`](WORKFLOW.md) for the branching pipeline.
+- **New ideas are explicitly wanted.** The [Roadmap](#roadmap) is a starting
+  point, not a wall — propose what you'd find useful.
+
+If nxm-git saves you from one accidental force-push, a ⭐ on the repo helps
+others find it.
+
+## Contributors
+
+Built and maintained by:
+
+- [**@dangranaz**](https://github.com/dangranaz)
+- [**@draco690456**](https://github.com/draco690456)
+
+[![Contributors](https://img.shields.io/badge/contributors-2-orange.svg)](#contributors)
+
+Want to see your name here? [Contributing](#contributing) tells you how.
+
+## License
+
+Open source, licensed under either of
+
+- MIT license ([LICENSE-MIT](LICENSE-MIT))
+- Apache License 2.0 ([LICENSE-APACHE](LICENSE-APACHE))
+
+at your option. Unless you explicitly state otherwise, any contribution you
+intentionally submit for inclusion in the work, as defined in the Apache-2.0
+license, shall be dual-licensed as above, without any additional terms or
+conditions.
